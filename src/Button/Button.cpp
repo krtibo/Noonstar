@@ -1,11 +1,11 @@
 #include "Button.h"
 #include <Arduino.h>
 
-byte Button::read() {
+Button::Status Button::read() {
 	// if not busy AND state is same as last time
 	if ((bitRead(status, 0) == false) && (digitalRead(pin) == last)) {
-		if (isLongPressed()) return 3;
-		return 255;																												// do nothing -- the button is still pressed
+		if (isLongPressed()) return LONG_PRESSED;
+		return NONE;																												// do nothing -- the button is still pressed
 	}
 
 	// If NEW Bit set - Key just pressed, record time
@@ -13,20 +13,20 @@ byte Button::read() {
 		bitSet(status, 0);																								// set busy
 		bitClear(status, 1);																							// set 'is is recently pressed? bit' to false
 		time = millis();
-		return 255;
+		return NONE;																											// do nothing -- the button is still pressed
 	}
 
-	if (isDebounceOver() == false) return 255;
+	if (isDebounceOver() == false) return NONE;
 
 	if (digitalRead(pin) == last) {
 		bitClear(status, 0);
 		bitSet(status, 1);
-		return 255;
+		return NONE;
 	} else {
 		bitClear(status, 0);
 		bitSet(status, 1);
 		last = ((~last) & 0b00000001); // invert last
-    return last;
+    return last == 0 ? PRESSED : NOT_PRESSED;
 	}
 }
 
