@@ -1,21 +1,17 @@
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
+#include "Screen/Screen.h"
 
 LiquidCrystal_I2C lcd(0x27, 20, 4);
+Screen* screen;
 
 void setup() {
-	// Initialize serial communication at 9600 baud rate
 	Serial.begin(9600);
 	Serial.println("Hello, World!");
-	lcd.init();
-	lcd.backlight();
-	lcd.clear();
+	screen = new Screen(lcd);
 }
 
-int count = 0;
 void loop() {
-	delay(100);
-	lcd.setCursor(0, 0);
-	lcd.print("test");
-	lcd.setCursor(0, 1);
+	delay(1000);
+	screen->render();
 }
