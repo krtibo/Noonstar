@@ -15,33 +15,123 @@ Button buttonF(32, 5);
 void setup() {
 	Serial.begin(9600);
 	screen = new Screen(lcd);
+	screen->setTopLeft("D");
+	screen->setTopCenter("E");
+	screen->setTopRight("F");
+	screen->setBottomRight("C");
 }
 
 void loop() {
-	delay(32);
-	byte buttonStateA = buttonA.read();
-	if (buttonStateA == 0) Serial.println("button A pressed");
-	if (buttonStateA == 1) Serial.println("button A NOT pressed");
-	if (buttonStateA == 3) Serial.println("button A LONG pressed");
-	byte buttonStateB = buttonB.read();
-	if (buttonStateB == 0) Serial.println("button B pressed");
-	if (buttonStateB == 1) Serial.println("button B NOT pressed");
-	if (buttonStateB == 3) Serial.println("button B LONG pressed");
-	byte buttonStateC = buttonC.read();
-	if (buttonStateC == 0) Serial.println("button C pressed");
-	if (buttonStateC == 1) Serial.println("button C NOT pressed");
-	if (buttonStateC == 3) Serial.println("button C LONG pressed");
-	byte buttonStateD = buttonD.read();
-	if (buttonStateD == 0) Serial.println("button D pressed");
-	if (buttonStateD == 1) Serial.println("button D NOT pressed");
-	if (buttonStateD == 3) Serial.println("button D LONG pressed");
-	byte buttonStateE = buttonE.read();
-	if (buttonStateE == 0) Serial.println("button E pressed");
-	if (buttonStateE == 1) Serial.println("button E NOT pressed");
-	if (buttonStateE == 3) Serial.println("button E LONG pressed");
-	byte buttonStateF = buttonF.read();
-	if (buttonStateF == 0) Serial.println("button F pressed");
-	if (buttonStateF == 1) Serial.println("button F NOT pressed");
-	if (buttonStateF == 3) Serial.println("button F LONG pressed");
-	// screen->render();
+	delay(1000);
+	screen->render();
+	// byte buttonStateA = buttonA.read();
+	// if (buttonStateA == Button::PRESSED) {
+	// 	Serial.println("button A pressed");
+	// 	lcd.clear();
+	// 	lcd.setCursor(2, 3);
+	// 	lcd.print("A");
+	// }
+	// if (buttonStateA == Button::NOT_PRESSED) {
+	// 	Serial.println("button A NOT pressed");
+	// 	lcd.clear();
+	// }
+	// if (buttonStateA == Button::LONG_PRESSED) {
+	// 	Serial.println("button A LONG pressed");
+	// 	lcd.clear();
+	// 	lcd.setCursor(1, 3);
+	// 	lcd.print("AAA");
+	// }
+	//
+	//
+	// byte buttonStateB = buttonB.read();
+	// if (buttonStateB == Button::PRESSED) {
+	// 	Serial.println("button B pressed");
+	// 	lcd.clear();
+	// 	lcd.setCursor(10, 3);
+	// 	lcd.print("B");
+	// }
+	// if (buttonStateB == Button::NOT_PRESSED) {
+	// 	Serial.println("button B NOT pressed");
+	// 	lcd.clear();
+	// }
+	// if (buttonStateB == Button::LONG_PRESSED) {
+	// 	Serial.println("button B LONG pressed");
+	// 	lcd.clear();
+	// 	lcd.setCursor(9, 3);
+	// 	lcd.print("BBB");
+	// }
+	//
+	// byte buttonStateC = buttonC.read();
+	// if (buttonStateC == Button::PRESSED) {
+	// 	Serial.println("button C pressed");
+	// 	lcd.clear();
+	// 	lcd.setCursor(18, 3);
+	// 	lcd.print("C");
+	// }
+	// if (buttonStateC == Button::NOT_PRESSED) {
+	// 	Serial.println("button C NOT pressed");
+	// 	lcd.clear();
+	// }
+	// if (buttonStateC == Button::LONG_PRESSED) {
+	// 	Serial.println("button C LONG pressed");
+	// 	lcd.clear();
+	// 	lcd.setCursor(17, 3);
+	// 	lcd.print("CCC");
+	// }
+	//
+	//
+	// byte buttonStateD = buttonD.read();
+	// if (buttonStateD == Button::PRESSED) {
+	// 	Serial.println("button D pressed");
+	// 	lcd.clear();
+	// 	lcd.setCursor(2, 0);
+	// 	lcd.print("D");
+	// }
+	// if (buttonStateD == Button::NOT_PRESSED) {
+	// 	Serial.println("button D NOT pressed");
+	// 	lcd.clear();
+	// }
+	// if (buttonStateD == Button::LONG_PRESSED) {
+	// 	Serial.println("button D LONG pressed");
+	// 	lcd.clear();
+	// 	lcd.setCursor(1, 0);
+	// 	lcd.print("DDD");
+	// }
+	//
+	//
+	// byte buttonStateE = buttonE.read();
+	// if (buttonStateE == Button::PRESSED) {
+	// 	Serial.println("button E pressed");
+	// 	lcd.clear();
+	// 	lcd.setCursor(10, 0);
+	// 	lcd.print("E");
+	// }
+	// if (buttonStateE == Button::NOT_PRESSED) {
+	// 	Serial.println("button E NOT pressed");
+	// 	lcd.clear();
+	// }
+	// if (buttonStateE == Button::LONG_PRESSED) {
+	// 	Serial.println("button E LONG pressed");
+	// 	lcd.clear();
+	// 	lcd.setCursor(9, 0);
+	// 	lcd.print("EEE");
+	// }
+	//
+	// byte buttonStateF = buttonF.read();
+	// if (buttonStateF == Button::PRESSED) {
+	// 	Serial.println("button F pressed");
+	// 	lcd.clear();
+	// 	lcd.setCursor(18, 0);
+	// 	lcd.print("F");
+	// }
+	// if (buttonStateF == Button::NOT_PRESSED) {
+	// 	Serial.println("button C NOT pressed");
+	// 	lcd.clear();
+	// }
+	// if (buttonStateF == Button::LONG_PRESSED) {
+	// 	Serial.println("button F LONG pressed");
+	// 	lcd.clear();
+	// 	lcd.setCursor(17, 0);
+	// 	lcd.print("FFF");
+	// }
 }
