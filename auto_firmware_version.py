@@ -3,9 +3,8 @@ import subprocess
 Import("env")
 
 def get_firmware_specifier_build_flag():    
-    # ret = subprocess.run(["git", "describe"], stdout=subprocess.PIPE, text=True) #Uses only annotated tags
-    ret = subprocess.run(["git", "describe", "--tags"], stdout=subprocess.PIPE, text=True) #Uses any tags
-    ret_commit = subprocess.run(["git", "describe", "--always"], stdout=subprocess.PIPE, text=True) #Uses any tags
+    ret = subprocess.run(["git", "tag"], stdout=subprocess.PIPE, text=True)
+    ret_commit = subprocess.run(["git", "describe", "--always"], stdout=subprocess.PIPE, text=True)
     build_version = ret.stdout.strip()
     commit = ret_commit.stdout.strip()
     build_flag = "-D AUTO_VERSION=\\\"" + build_version + "-" + commit + "\\\""
