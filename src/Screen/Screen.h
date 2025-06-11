@@ -16,6 +16,7 @@ class Screen {
 			lcd.clear();
 			lcd.createChar(0, upCharacter);
 			lcd.createChar(1, downCharacter);
+			initialRun = true;
 		}
 		void render();
 		void setTopLeft(const String& text) { topLeft = makeWhitespacePadding(text.substring(0, RENDERABLE_ACTION_TEXT_SIZE)); }
@@ -31,7 +32,11 @@ class Screen {
 		LiquidCrystal_I2C* lcd;
 		String topLeft, topCenter, topRight, bottomRight;
 		String sceneTitle, sceneSubtitle;
+		bool initialRun;
+
 		String makeWhitespacePadding(const String& text);
+		void renderWelcomeScreen();
+		void renderScene();
 };
 
 #endif

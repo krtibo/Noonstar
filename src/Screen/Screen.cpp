@@ -2,6 +2,22 @@
 #include <LiquidCrystal_I2C.h>
 
 void Screen::render() {
+	if (initialRun) { renderWelcomeScreen(); return; }
+	else { renderScene(); }
+}
+
+void Screen::renderWelcomeScreen() {
+	lcd->clear();
+	lcd->setCursor(0, 1);
+	lcd->print("Noonstar");
+	lcd->setCursor(0, 2);
+	lcd->print(AUTO_VERSION);
+	initialRun = false;
+	delay(3000);
+	lcd->clear();
+}
+
+void Screen::renderScene() {
 	lcd->setCursor(0, 0);
 	lcd->print(topLeft + " ");
 	lcd->print(topCenter + " ");

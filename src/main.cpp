@@ -11,7 +11,6 @@ Button buttonC(26, 5);
 Button buttonD(25, 5);
 Button buttonE(33, 5);
 Button buttonF(32, 5);
-bool initialLoad = true;
 
 void setup() {
 	Serial.begin(9600);
@@ -19,22 +18,14 @@ void setup() {
 }
 
 void loop() {
-	if (initialLoad) {
-		screen->setSceneTitle("Noonstar");
-		screen->setSceneSubtitle(AUTO_VERSION);
-		screen->render();
-		initialLoad = false;
-		delay(3000);
-	} else {
-		screen->setTopLeft("D");
-		screen->setTopCenter("E");
-		screen->setTopRight("F");
-		screen->setBottomRight("C");
-		screen->setSceneTitle("");
-		screen->setSceneSubtitle("");
-		screen->render();
-		delay(1000);
-	}
+	delay(32);
+	screen->setTopLeft("D");
+	screen->setTopCenter("E");
+	screen->setTopRight("F");
+	screen->setBottomRight("C");
+	screen->setSceneTitle("");
+	screen->setSceneSubtitle("");
+	screen->render();
 	// byte buttonStateA = buttonA.read();
 	// if (buttonStateA == Button::PRESSED) {
 	// 	Serial.println("button A pressed");
