@@ -1,0 +1,55 @@
+CompileFlags:
+  Add:
+    - -DSSIZE_MAX
+    - -DLWIP_NO_UNISTD_H=1
+    - -Dssize_t=long
+    - -D_SSIZE_T_DECLARED
+    - -Wno-unknown-warning-option
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/AsyncUDP/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/BluetoothSerial/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/DNSServer/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/EEPROM/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/ESP32/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/ESPmDNS/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/Ethernet/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/FFat/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/FS/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/HTTPClient/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/HTTPUpdate/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/LittleFS/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/Insights/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/I2S/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/NetBIOS/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/Preferences/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/RainMaker/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/SD_MMC/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/SD/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/SimpleBLE/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/SPIFFS/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/Ticker/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/Update/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/USB/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src
+    - -I/Users/krtibo/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src
+
+  Remove:
+    - -mlong-calls
+    - -fno-tree-switch-conversion
+    - -mtext-section-literals
+    - -mlongcalls
+    - -fstrict-volatile-bitfields
+    - -free
+    - -fipa-pta
+    - -march=*
+    - -mabi=*
+    - -mcpu=*
+
+Diagnostics:
+  Suppress:
+    - pp_including_mainfile_in_preamble
