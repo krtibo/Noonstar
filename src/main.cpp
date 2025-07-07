@@ -1,6 +1,7 @@
 // compile with Piorun neovim command
 // to compile commands: pio run --target compiledb
 // should open project from noonstar directory with nvim command, otherwise clang misbehaves
+// if clangd cries for a library, make sure to add its path to .clangd
 
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
