@@ -8,6 +8,7 @@ void Screen::render() {
 
 void Screen::renderWelcomeScreen() {
 	lcd->clear();
+	resetTextContent();
 	lcd->setCursor(0, 1);
 	lcd->print("Noonstar");
 	lcd->setCursor(0, 2);
@@ -32,6 +33,15 @@ void Screen::renderScene() {
 	lcd->print(" Prev ");
 	lcd->write(1); // Down character
 	lcd->print(" " + bottomRight);
+}
+
+void Screen::resetTextContent() {
+	topLeft = "";
+	topCenter = "";
+	topRight = "";
+	bottomRight = "";
+	sceneTitle = "";
+	sceneSubtitle = "";
 }
 
 String Screen::makeWhitespacePadding(const String& text) {

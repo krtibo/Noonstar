@@ -37,6 +37,7 @@ class Screen {
 		String makeWhitespacePadding(const String& text);
 		void renderWelcomeScreen();
 		void renderScene();
+		void resetTextContent();
 };
 
 #endif

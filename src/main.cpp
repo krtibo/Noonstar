@@ -1,7 +1,18 @@
+// compile with Piorun neovim command
+// to compile commands: pio run --target compiledb
+// should open project from noonstar directory with nvim command, otherwise clang misbehaves
+
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
 #include "Screen/Screen.h"
 #include "Button/Button.h"
+#include <WiFi.h>
+#include <WebServer.h>
+#include "SPIFFS.h"
+#include <ESPmDNS.h>
+#include <MIDI.h>
+
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
 
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 Screen* screen;
@@ -12,20 +23,138 @@ Button buttonD(25, 5);
 Button buttonE(33, 5);
 Button buttonF(32, 5);
 
+const char* ssid = "ESP32-Access-Point";
+const char* password = "12345678";
+
+WebServer server(80);
+File uploadFile;  // File object for the uploaded file
+
+// Serve the upload form page
+void handleRoot() {
+	const char* html =
+	"<html lang=\"en\">\n"
+	"<head>\n"
+	"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
+	"<style>\n"
+	"  html, body {\n"
+	"    height: 100%;\n"
+	"    margin: 0;\n"
+	"    display: flex;\n"
+	"    align-items: center;\n"
+	"    justify-content: center;\n"
+	"    font-family: sans-serif;\n"
+	"    padding: 1em;\n"
+	"    box-sizing: border-box;\n"
+	"  }\n"
+	"  form {\n"
+	"    display: flex;\n"
+	"    flex-direction: column;\n"
+	"    gap: 1em;\n"
+	"    width: 100%;\n"
+	"    max-width: 320px;\n"
+	"  }\n"
+	"  input[type=\"file\"], input[type=\"submit\"] {\n"
+	"    font-size: 1em;\n"
+	"  }\n"
+	"</style>\n"
+	"</head>\n"
+	"<body>\n"
+	"  <form method=\"POST\" action=\"/upload\" enctype=\"multipart/form-data\">\n"
+	"    <h1 style=\"text-align:center; margin:0 0 1em;\">Upload Config File</h1>\n"
+	"    <input type=\"file\" name=\"configfile\" required>\n"
+	"    <input type=\"submit\" value=\"Upload\">\n"
+	"  </form>\n"
+	"</body>\n"
+	"</html>\n";
+	server.send(200, "text/html", html);
+}
+
+// Handle file upload
+void handleFileUpload() {
+  HTTPUpload& upload = server.upload();
+
+  if (upload.status == UPLOAD_FILE_START) {
+    Serial.printf("Upload Start: %s\n", upload.filename.c_str());
+    // Open file for writing (create or overwrite)
+    if (SPIFFS.exists("/config.txt")) {
+      SPIFFS.remove("/config.txt");  // Remove old file if exists
+    }
+    uploadFile = SPIFFS.open("/config.txt", FILE_WRITE);
+    if (!uploadFile) {
+      Serial.println("Failed to open file for writing");
+    }
+  } else if (upload.status == UPLOAD_FILE_WRITE) {
+    // Write received bytes to file
+    if (uploadFile) {
+      uploadFile.write(upload.buf, upload.currentSize);
+    }
+  } else if (upload.status == UPLOAD_FILE_END) {
+    if (uploadFile) {
+      uploadFile.close();
+      Serial.printf("Upload End: %s, %u bytes\n", upload.filename.c_str(), upload.totalSize);
+      server.send(200, "text/plain", "File Uploaded Successfully");
+    } else {
+      server.send(500, "text/plain", "Failed to save file");
+    }
+  } else if (upload.status == UPLOAD_FILE_ABORTED) {
+    if (uploadFile) {
+      uploadFile.close();
+      SPIFFS.remove("/config.txt");  // Remove incomplete file
+    }
+    Serial.println("Upload Aborted");
+    server.send(500, "text/plain", "Upload Aborted");
+  }
+}
+
+
 void setup() {
-	Serial.begin(9600);
+	Serial.begin(9800);          // Debug output on UART0
+  Serial2.begin(31250);          // MIDI baud rate on UART2
+  MIDI.begin(MIDI_CHANNEL_OMNI);
 	screen = new Screen(lcd);
+
+  // Initialize SPIFFS
+  if (!SPIFFS.begin(true)) {
+    Serial.println("An Error has occurred while mounting SPIFFS");
+    return;
+  }
+
+  // Start WiFi Access Point
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(ssid, password);
+
+  Serial.println("Access Point started");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.softAPIP());
+
+  // Start mDNS responder for esp32.local
+  if (!MDNS.begin("esp32")) {
+    Serial.println("Error setting up MDNS responder!");
+  } else {
+    Serial.println("mDNS responder started");
+  }
+
+  // Define server routes
+  server.on("/", HTTP_GET, handleRoot);
+  server.on("/upload", HTTP_POST, []() {
+    // Empty handler for POST completion (required by WebServer)
+    server.send(200);
+  }, handleFileUpload);
+
+  server.begin();
+  Serial.println("HTTP server started");
 }
 
 void loop() {
 	delay(32);
-	screen->setTopLeft("D");
-	screen->setTopCenter("E");
-	screen->setTopRight("F");
-	screen->setBottomRight("C");
-	screen->setSceneTitle("");
-	screen->setSceneSubtitle("");
-	screen->render();
+	// screen->setTopLeft("D");
+	// screen->setTopCenter("E");
+	// screen->setTopRight("F");
+	// screen->setBottomRight("C");
+	// screen->setSceneTitle("");
+	// screen->setSceneSubtitle("");
+	// screen->render();
+	server.handleClient();
 	// byte buttonStateA = buttonA.read();
 	// if (buttonStateA == Button::PRESSED) {
 	// 	Serial.println("button A pressed");
