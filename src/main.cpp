@@ -1,5 +1,5 @@
 // compile with Piorun neovim command
-// to compile commands: pio run --target compiledb
+// to generate compile_commands.json: pio run --target compiledb
 // should open project from noonstar directory with nvim command, otherwise clang misbehaves
 // if clangd cries for a library, make sure to add its path to .clangd
 
@@ -12,6 +12,7 @@
 #include "SPIFFS.h"
 #include <ESPmDNS.h>
 #include <MIDI.h>
+#include <ArduinoOTA.h>
 
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
 
@@ -109,53 +110,81 @@ void handleFileUpload() {
 
 
 void setup() {
-	Serial.begin(9800);          // Debug output on UART0
-  Serial2.begin(31250);          // MIDI baud rate on UART2
-  MIDI.begin(MIDI_CHANNEL_OMNI);
+	Serial.begin(9600);          // Debug output on UART0
+  // Serial2.begin(31250);          // MIDI baud rate on UART2
+  // MIDI.begin(MIDI_CHANNEL_OMNI);
 	screen = new Screen(lcd);
 
-  // Initialize SPIFFS
-  if (!SPIFFS.begin(true)) {
-    Serial.println("An Error has occurred while mounting SPIFFS");
-    return;
-  }
+	// WiFi.mode(WIFI_AP);
+	// WiFi.softAP(ssid, password);
+	// ArduinoOTA.setPassword("12345678");
+	// ArduinoOTA.begin();
+	Serial.println("Access Point started");
+	Serial.print("IP address: ");
+	Serial.println(WiFi.softAPIP());
 
-  // Start WiFi Access Point
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP(ssid, password);
-
-  Serial.println("Access Point started");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.softAPIP());
-
-  // Start mDNS responder for esp32.local
-  if (!MDNS.begin("esp32")) {
-    Serial.println("Error setting up MDNS responder!");
-  } else {
-    Serial.println("mDNS responder started");
-  }
-
-  // Define server routes
-  server.on("/", HTTP_GET, handleRoot);
-  server.on("/upload", HTTP_POST, []() {
-    // Empty handler for POST completion (required by WebServer)
-    server.send(200);
-  }, handleFileUpload);
-
-  server.begin();
-  Serial.println("HTTP server started");
+  // // Initialize SPIFFS
+  // if (!SPIFFS.begin(true)) {
+  //   Serial.println("An Error has occurred while mounting SPIFFS");
+  //   return;
+  // }
+  //
+  // // Start WiFi Access Point
+  //
+  // // Start mDNS responder for esp32.local
+  // if (!MDNS.begin("esp32")) {
+  //   Serial.println("Error setting up MDNS responder!");
+  // } else {
+  //   Serial.println("mDNS responder started");
+  // }
+  //
+  // // Define server routes
+  // server.on("/", HTTP_GET, handleRoot);
+  // server.on("/upload", HTTP_POST, []() {
+  //   // Empty handler for POST completion (required by WebServer)
+  //   server.send(200);
+  // }, handleFileUpload);
+  //
+  // server.begin();
+  // Serial.println("HTTP server started");
 }
 
 void loop() {
-	delay(32);
-	// screen->setTopLeft("D");
-	// screen->setTopCenter("E");
-	// screen->setTopRight("F");
-	// screen->setBottomRight("C");
-	// screen->setSceneTitle("");
-	// screen->setSceneSubtitle("");
-	// screen->render();
-	server.handleClient();
+	screen->setTopLeft("RVB   ");
+	screen->setTopCenter("DLY");
+	screen->setTopRight("Freeze");
+	screen->setBottomRight("Loop");
+	screen->setSceneTitle("#02");
+	screen->setSceneSubtitle("Mark V - Post-rock");
+	screen->render();
+	if (buttonA.read() == Button::LONG_PRESSED && buttonC.read() == Button::LONG_PRESSED) {
+		lcd.clear();
+		WiFi.mode(WIFI_AP);
+		WiFi.softAP(ssid, password);
+		ArduinoOTA.setPassword("12345678");
+		ArduinoOTA.begin();
+		while(true) {
+			screen->setSceneTitle("OTA mode...");
+			screen->setSceneSubtitle("Connect to WiFi");
+			screen->setPrezMode(true);
+			screen->render();
+			ArduinoOTA.handle();
+			if (
+				buttonA.read() == Button::PRESSED ||
+				buttonB.read() == Button::PRESSED ||
+				buttonC.read() == Button::PRESSED ||
+				buttonD.read() == Button::PRESSED ||
+				buttonE.read() == Button::PRESSED ||
+				buttonF.read() == Button::PRESSED
+			) {
+				screen->setPrezMode(false);
+				lcd.clear();
+				WiFi.softAPdisconnect(true);
+				break;
+			}
+		}
+	}
+	// server.handleClient();
 	// byte buttonStateA = buttonA.read();
 	// if (buttonStateA == Button::PRESSED) {
 	// 	Serial.println("button A pressed");
