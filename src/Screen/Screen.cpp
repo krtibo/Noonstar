@@ -8,37 +8,52 @@ void Screen::render() {
 
 void Screen::renderWelcomeScreen() {
 	lcd->clear();
-	resetTextContent();
-	lcd->setCursor(0, 1);
-	lcd->print("Noonstar");
-	lcd->setCursor(0, 2);
-	lcd->print(AUTO_VERSION);
+	isPrezMode = true;
+	sceneTitle = "Noonstar";
+	sceneSubtitle = AUTO_VERSION;
+	renderScene();
 	initialRun = false;
 	delay(3000);
+	isPrezMode = false;
 	lcd->clear();
 }
 
 void Screen::renderScene() {
-	lcd->setCursor(0, 0);
-	lcd->print(topLeft + " ");
-	lcd->print(topCenter + " ");
-	lcd->print(topRight);
+	if (!isPrezMode) {
+		lcd->setCursor(0, 0);
+		lcd->print(topLeft + " ");
+		lcd->print(topCenter + " ");
+		lcd->print(topRight);
+	}
 	lcd->setCursor(0, 1);
 	lcd->print(sceneTitle);
 	lcd->setCursor(0, 2);
 	lcd->print(sceneSubtitle);
-	lcd->setCursor(0, 3);
-	lcd->print("Next ");
-	lcd->write(0); // Up character
-	lcd->print(" Prev ");
-	lcd->write(1); // Down character
-	lcd->print(" " + bottomRight);
+	if (!isPrezMode) {
+		lcd->setCursor(0, 3);
+		if (bottomLeft == "") {
+			lcd->print("Next ");
+			lcd->write(0); // Up character
+		} else {
+			lcd->print(bottomLeft);
+		}
+		if (bottomCenter == "") {
+			lcd->print(" Prev ");
+			lcd->write(1); // Down character
+			lcd->print(" ");
+		} else {
+			lcd->print(bottomCenter);
+		}
+		lcd->print(bottomRight);
+	}
 }
 
 void Screen::resetTextContent() {
 	topLeft = "";
 	topCenter = "";
 	topRight = "";
+	bottomLeft = "";
+	bottomCenter = "";
 	bottomRight = "";
 	sceneTitle = "";
 	sceneSubtitle = "";
