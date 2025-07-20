@@ -14,16 +14,22 @@
 #include <MIDI.h>
 #include <ArduinoOTA.h>
 
-MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI);
+MIDI_CREATE_DEFAULT_INSTANCE();
 
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 Screen* screen;
+
 Button buttonA(14, 5);
 Button buttonB(27, 5);
 Button buttonC(26, 5);
 Button buttonD(25, 5);
 Button buttonE(33, 5);
 Button buttonF(32, 5);
+bool isAnyButtonPressed() {
+	return
+	buttonA.read() == Button::PRESSED || buttonB.read() == Button::PRESSED || buttonC.read() == Button::PRESSED ||
+	buttonD.read() == Button::PRESSED || buttonE.read() == Button::PRESSED || buttonF.read() == Button::PRESSED;
+}
 
 const char* ssid = "ESP32-Access-Point";
 const char* password = "12345678";
@@ -31,15 +37,11 @@ const char* password = "12345678";
 WebServer server(80);
 File uploadFile;  // File object for the uploaded file
 
-bool isAnyButtonPressed() {
-	return
-		buttonA.read() == Button::PRESSED ||
-		buttonB.read() == Button::PRESSED ||
-		buttonC.read() == Button::PRESSED ||
-		buttonD.read() == Button::PRESSED ||
-		buttonE.read() == Button::PRESSED ||
-		buttonF.read() == Button::PRESSED;
-}
+bool isTunerOn = false;
+bool isReverbOn = false;
+bool isDelayOn = false;
+int currentPreset = 0;
+int totalPresets = 127;
 
 // Serve the upload form page
 void handleRoot() {
@@ -151,10 +153,10 @@ void otaMode() {
 }
 
 void setup() {
-	Serial.begin(9600);          // Debug output on UART0
-  // Serial2.begin(31250);          // MIDI baud rate on UART2
-  // MIDI.begin(MIDI_CHANNEL_OMNI);
+	Serial.begin(9600);
+  MIDI.begin(MIDI_CHANNEL_OMNI);
 	screen = new Screen(lcd);
+	MIDI.sendProgramChange(0, 1);
 
   // // Initialize SPIFFS
   // if (!SPIFFS.begin(true)) {
@@ -187,11 +189,33 @@ void loop() {
 	screen->setTopLeft("RVB   ");
 	screen->setTopCenter("DLY");
 	screen->setTopRight("Freeze");
-	screen->setBottomRight("Loop");
+	screen->setBottomRight("Tuner");
 	screen->setSceneTitle("#02");
 	screen->setSceneSubtitle("Mark V - Post-rock");
 	screen->render();
-	otaMode();
+
+	if (buttonA.read() == Button::PRESSED) {
+		currentPreset = (currentPreset + 1) % totalPresets;
+		MIDI.sendProgramChange(currentPreset, 1);
+	}
+	if (buttonB.read() == Button::PRESSED) {
+		currentPreset = (currentPreset - 1 + totalPresets) % totalPresets;
+		MIDI.sendProgramChange(currentPreset, 1);
+	}
+	if (buttonC.read() == Button::PRESSED) {
+		MIDI.sendControlChange(68, isTunerOn ? 0 : 127, 1);
+		isTunerOn = !isTunerOn;
+	}
+	if (buttonD.read() == Button::PRESSED) {
+		MIDI.sendControlChange(4, isReverbOn ? 0 : 127, 1);
+		isReverbOn = !isReverbOn;
+	}
+	if (buttonE.read() == Button::PRESSED) {
+		MIDI.sendControlChange(5, isDelayOn ? 0 : 127, 1);
+		isDelayOn = !isDelayOn;
+	}
+	otaMode(); // NOTE listens for long press, it should be after short press listeners
+
 	// server.handleClient();
 	// byte buttonStateA = buttonA.read();
 	// if (buttonStateA == Button::PRESSED) {
