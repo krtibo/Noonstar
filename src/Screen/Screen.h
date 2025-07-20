@@ -30,6 +30,7 @@ class Screen {
 		void setSceneSubtitle(const String& text) { sceneSubtitle = text.substring(0, RENDERABLE_TITLE_SIZE); }
 		void setPrezMode(const bool& mode) { isPrezMode = mode; }
 		void resetTextContent();
+		void clear() { lcd->clear(); }
 
 	private:
 		byte downCharacter[CUSTOM_CHAR_SIZE] = { B00000, B00000, B11111, B11111, B01110, B00100, B00000, B00000 };

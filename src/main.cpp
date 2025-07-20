@@ -31,6 +31,16 @@ const char* password = "12345678";
 WebServer server(80);
 File uploadFile;  // File object for the uploaded file
 
+bool isAnyButtonPressed() {
+	return
+		buttonA.read() == Button::PRESSED ||
+		buttonB.read() == Button::PRESSED ||
+		buttonC.read() == Button::PRESSED ||
+		buttonD.read() == Button::PRESSED ||
+		buttonE.read() == Button::PRESSED ||
+		buttonF.read() == Button::PRESSED;
+}
+
 // Serve the upload form page
 void handleRoot() {
 	const char* html =
@@ -108,20 +118,43 @@ void handleFileUpload() {
   }
 }
 
+void onOTAStart() {
+	screen->clear();
+	screen->setSceneTitle("OTA update started.");
+	screen->setSceneSubtitle("");
+	screen->render();
+}
+
+void otaMode() {
+	if (buttonA.read() == Button::LONG_PRESSED && buttonC.read() == Button::LONG_PRESSED) {
+		screen->clear();
+		WiFi.mode(WIFI_AP);
+		WiFi.softAP(ssid, password);
+		ArduinoOTA.setPassword("12345678");
+		ArduinoOTA.begin();
+		while(true) {
+			screen->setSceneTitle("OTA mode...");
+			screen->setSceneSubtitle("Connect to WiFi");
+			screen->setPrezMode(true);
+			screen->render();
+			ArduinoOTA.handle();
+			ArduinoOTA.onStart(onOTAStart);
+			if (isAnyButtonPressed()) {
+				screen->setPrezMode(false);
+				screen->clear();
+				WiFi.softAPdisconnect(true);
+				ArduinoOTA.end();
+				break;
+			}
+		}
+	}
+}
 
 void setup() {
 	Serial.begin(9600);          // Debug output on UART0
   // Serial2.begin(31250);          // MIDI baud rate on UART2
   // MIDI.begin(MIDI_CHANNEL_OMNI);
 	screen = new Screen(lcd);
-
-	// WiFi.mode(WIFI_AP);
-	// WiFi.softAP(ssid, password);
-	// ArduinoOTA.setPassword("12345678");
-	// ArduinoOTA.begin();
-	Serial.println("Access Point started");
-	Serial.print("IP address: ");
-	Serial.println(WiFi.softAPIP());
 
   // // Initialize SPIFFS
   // if (!SPIFFS.begin(true)) {
@@ -149,6 +182,7 @@ void setup() {
   // Serial.println("HTTP server started");
 }
 
+
 void loop() {
 	screen->setTopLeft("RVB   ");
 	screen->setTopCenter("DLY");
@@ -157,33 +191,7 @@ void loop() {
 	screen->setSceneTitle("#02");
 	screen->setSceneSubtitle("Mark V - Post-rock");
 	screen->render();
-	if (buttonA.read() == Button::LONG_PRESSED && buttonC.read() == Button::LONG_PRESSED) {
-		lcd.clear();
-		WiFi.mode(WIFI_AP);
-		WiFi.softAP(ssid, password);
-		ArduinoOTA.setPassword("12345678");
-		ArduinoOTA.begin();
-		while(true) {
-			screen->setSceneTitle("OTA mode...");
-			screen->setSceneSubtitle("Connect to WiFi");
-			screen->setPrezMode(true);
-			screen->render();
-			ArduinoOTA.handle();
-			if (
-				buttonA.read() == Button::PRESSED ||
-				buttonB.read() == Button::PRESSED ||
-				buttonC.read() == Button::PRESSED ||
-				buttonD.read() == Button::PRESSED ||
-				buttonE.read() == Button::PRESSED ||
-				buttonF.read() == Button::PRESSED
-			) {
-				screen->setPrezMode(false);
-				lcd.clear();
-				WiFi.softAPdisconnect(true);
-				break;
-			}
-		}
-	}
+	otaMode();
 	// server.handleClient();
 	// byte buttonStateA = buttonA.read();
 	// if (buttonStateA == Button::PRESSED) {
