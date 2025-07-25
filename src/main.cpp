@@ -14,17 +14,20 @@
 #include <MIDI.h>
 #include <ArduinoOTA.h>
 
+#define DEBUG_MODE true
+
 MIDI_CREATE_DEFAULT_INSTANCE();
 
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 Screen* screen;
 
-Button buttonA(14, 5);
-Button buttonB(27, 5);
-Button buttonC(26, 5);
-Button buttonD(25, 5);
-Button buttonE(33, 5);
-Button buttonF(32, 5);
+Button buttonA(14);
+Button buttonB(27);
+Button buttonC(26);
+Button buttonD(25);
+Button buttonE(33);
+Button buttonF(32);
+
 bool isAnyButtonPressed() {
 	return
 	buttonA.read() == Button::PRESSED || buttonB.read() == Button::PRESSED || buttonC.read() == Button::PRESSED ||
@@ -40,8 +43,23 @@ File uploadFile;  // File object for the uploaded file
 bool isTunerOn = false;
 bool isReverbOn = false;
 bool isDelayOn = false;
+char sceneTitle[21];
 int currentPreset = 0;
 int totalPresets = 127;
+
+int taps = 0;
+unsigned long lastTap;
+unsigned long tapsSum;
+unsigned long currentTap;
+
+void updateSceneTitle() {
+	float tapsSumFloat = static_cast<float>(tapsSum) / taps;
+	if (tapsSumFloat > 0) {
+		std::sprintf(sceneTitle, "#%03d            t%3.0f", currentPreset, 60000 / tapsSumFloat);
+	} else {
+		std::sprintf(sceneTitle, "#%03d", currentPreset);
+	}
+}
 
 // Serve the upload form page
 void handleRoot() {
@@ -127,8 +145,8 @@ void onOTAStart() {
 	screen->render();
 }
 
-void otaMode() {
-	if (buttonA.read() == Button::LONG_PRESSED && buttonC.read() == Button::LONG_PRESSED) {
+void otaMode(Button::Status buttonAValue, Button::Status buttonCValue) {
+	if (buttonAValue == Button::LONG_PRESSED && buttonCValue == Button::LONG_PRESSED) {
 		screen->clear();
 		WiFi.mode(WIFI_AP);
 		WiFi.softAP(ssid, password);
@@ -152,12 +170,37 @@ void otaMode() {
 	}
 }
 
+void handleTap() {
+	currentTap = millis();
+	if (lastTap > 0 && currentTap - lastTap > 5000) {
+		taps = 0;
+		tapsSum = 0;
+		currentTap = 0;
+		lastTap = 0;
+	}
+	if (lastTap > 0) {
+		tapsSum += currentTap - lastTap;
+		taps++;
+	}
+	lastTap = currentTap;
+}
+
+void otaDebug() {
+	if (DEBUG_MODE) {
+		WiFi.mode(WIFI_AP);
+		WiFi.softAP(ssid, password);
+		ArduinoOTA.setPassword("12345678");
+		ArduinoOTA.begin();
+	}
+}
+
 void setup() {
 	Serial.begin(9600);
   MIDI.begin(MIDI_CHANNEL_OMNI);
-	screen = new Screen(lcd);
 	MIDI.sendProgramChange(0, 1);
-
+	screen = new Screen(lcd);
+	updateSceneTitle();
+	otaDebug();
   // // Initialize SPIFFS
   // if (!SPIFFS.begin(true)) {
   //   Serial.println("An Error has occurred while mounting SPIFFS");
@@ -186,35 +229,50 @@ void setup() {
 
 
 void loop() {
-	screen->setTopLeft("RVB   ");
-	screen->setTopCenter("DLY");
+	if (DEBUG_MODE) ArduinoOTA.handle();
+	updateSceneTitle();
+	screen->setTopLeft(isReverbOn ? "RVB   " : "rvb   ");
+	screen->setTopCenter(isDelayOn ? "DLY" : "dly");
 	screen->setTopRight("Freeze");
-	screen->setBottomRight("Tuner");
-	screen->setSceneTitle("#02");
+	screen->setBottomRight(isTunerOn ? " t/TUN" : " t/tun");
+	screen->setSceneTitle(sceneTitle);
 	screen->setSceneSubtitle("Mark V - Post-rock");
 	screen->render();
 
-	if (buttonA.read() == Button::PRESSED) {
+	const Button::Status buttonAValue = buttonA.read();
+	const Button::Status buttonBValue = buttonB.read();
+	const Button::Status buttonCValue = buttonC.read();
+	const Button::Status buttonDValue = buttonD.read();
+	const Button::Status buttonEValue = buttonE.read();
+	const Button::Status buttonFValue = buttonF.read();
+
+	if (buttonAValue == Button::PRESSED) {
 		currentPreset = (currentPreset + 1) % totalPresets;
 		MIDI.sendProgramChange(currentPreset, 1);
+		updateSceneTitle();
 	}
-	if (buttonB.read() == Button::PRESSED) {
+	if (buttonBValue == Button::PRESSED) {
 		currentPreset = (currentPreset - 1 + totalPresets) % totalPresets;
 		MIDI.sendProgramChange(currentPreset, 1);
+		updateSceneTitle();
 	}
-	if (buttonC.read() == Button::PRESSED) {
-		MIDI.sendControlChange(68, isTunerOn ? 0 : 127, 1);
+	if (buttonCValue == Button::PRESSED) {
+		handleTap();
+		MIDI.sendControlChange(64, 64, 1);
+	}
+	if (buttonCValue == Button::LONG_PRESSED) {
+		MIDI.sendControlChange(68, 127, 1);
 		isTunerOn = !isTunerOn;
 	}
-	if (buttonD.read() == Button::PRESSED) {
+	if (buttonDValue == Button::PRESSED) {
 		MIDI.sendControlChange(4, isReverbOn ? 0 : 127, 1);
 		isReverbOn = !isReverbOn;
 	}
-	if (buttonE.read() == Button::PRESSED) {
+	if (buttonEValue == Button::PRESSED) {
 		MIDI.sendControlChange(5, isDelayOn ? 0 : 127, 1);
 		isDelayOn = !isDelayOn;
 	}
-	otaMode(); // NOTE listens for long press, it should be after short press listeners
+	otaMode(buttonAValue, buttonCValue);
 
 	// server.handleClient();
 	// byte buttonStateA = buttonA.read();

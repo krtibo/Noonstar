@@ -4,13 +4,9 @@
 
 class Button {
 	public:
-		Button(byte pin, int debounce) {
+		Button(byte pin) {
 			pinMode(pin, INPUT_PULLUP);
 			this->pin = pin;
-			this->debounce = debounce;
-			this->last = 1;
-			this->status = 0b00000010;
-			this->time = 0;
 		};
 		enum Status {
 			NOT_PRESSED = 1, // 0b00000001
@@ -21,15 +17,12 @@ class Button {
 		Status read();
 
 	private:
-		bool isDebounceOver();
-		bool isLongPressed();
-
 		const int LONG_PRESS_TIME = 1500;
-		unsigned long time;
-		int debounce;
 		byte pin;
-		byte status;
-		byte last;
+		Status lastValue = Status::NOT_PRESSED;
+		unsigned long lastValueRead;
+		bool isPressed = false;
+		bool longPressTriggered = false;
 };
 
 #endif
