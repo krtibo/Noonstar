@@ -60,6 +60,7 @@ File uploadFile;  // File object for the uploaded file
 bool isTunerOn = false;
 bool isReverbOn = false;
 bool isDelayOn = false;
+bool isLoopOn = false;
 char sceneTitle[21];
 int currentPreset = 0;
 int totalPresets = 127;
@@ -228,6 +229,78 @@ void sendMIDIControlChange(int controlNumber, int controlValue) {
 	MIDI.sendControlChange(controlNumber, controlValue, MIDI_CHANNEL);
 }
 
+void loopMode() {
+	if (!isLoopOn) return;
+	screen->resetTextContent();
+	screen->clear();
+	unsigned long loopStartTime = 0;
+	unsigned long loopLength = 0;
+	char loopLengthStr[20] = "";
+	while(true) {
+		screen->setBottomLeft(loopStartTime > 0 ? "REC" : "rec");
+		screen->setBottomCenter("play");
+		screen->setBottomRight("stop");
+		screen->setTopLeft("o.dub");
+		screen->setTopCenter("undo");
+		screen->setTopRight("LOOP");
+		screen->setSceneTitle("Loop mode");
+
+		if (loopStartTime > 0) {
+			for (int i=0; i<20; i++) { loopLengthStr[i] = ' '; }
+			loopLength = millis() - loopStartTime;
+			float progressChars = ((float)loopLength/1000)/30*20;
+			float limit = progressChars > 20 ? 20 : progressChars;
+			for (int i=0; i<limit; i++) {
+				loopLengthStr[i] = (char)255;
+			}
+		}
+
+		screen->setSceneSubtitle(loopLengthStr);
+		screen->render();
+		readButtonValues();
+
+		if (buttonValues[Buttons::A] == Button::PRESSED) {
+			sendMIDIControlChange(CC_LOOP_REC);
+			screen->clear();
+			if (loopStartTime == 0) {
+				loopStartTime = millis();
+			}
+		}
+		if (buttonValues[Buttons::B] == Button::PRESSED) {
+			sendMIDIControlChange(CC_LOOP_PLAY);
+			if (loopStartTime > 0) {
+				loopLength = millis() - loopStartTime;
+				loopStartTime = 0;
+				for (int i=0; i<20; i++) { loopLengthStr[i] = ' '; }
+				std::sprintf(loopLengthStr, "* recorded %.1fs", (float)loopLength/1000);
+				screen->clear();
+			}
+		}
+		if (buttonValues[Buttons::C] == Button::PRESSED) {
+			sendMIDIControlChange(CC_LOOP_STOP);
+			if (loopStartTime > 0) {
+				loopLength = millis() - loopStartTime;
+				loopStartTime = 0;
+				for (int i=0; i<20; i++) { loopLengthStr[i] = ' '; }
+				std::sprintf(loopLengthStr, "* recorded %.1fs", (float)loopLength/1000);
+				screen->clear();
+			}
+		}
+		if (buttonValues[Buttons::D] == Button::PRESSED) {
+			sendMIDIControlChange(CC_LOOP_OVERDUB);
+		}
+		if (buttonValues[Buttons::E] == Button::PRESSED) {
+			sendMIDIControlChange(CC_LOOP_UNDO);
+		}
+		if (buttonValues[Buttons::F] == Button::PRESSED) {
+			isLoopOn = false;
+			screen->resetTextContent();
+			screen->clear();
+			break;
+		}
+	}
+}
+
 void setup() {
 	Serial.begin(9600);
   MIDI.begin(MIDI_CHANNEL_OMNI);
@@ -266,7 +339,7 @@ void loop() {
 	updateSceneTitle();
 	screen->setTopLeft(isReverbOn ? "RVB   " : "rvb   ");
 	screen->setTopCenter(isDelayOn ? "DLY" : "dly");
-	screen->setTopRight("Freeze");
+	screen->setTopRight(isLoopOn ? "  LOOP" : "  loop");
 	screen->setBottomRight(isTunerOn ? " t/TUN" : " t/tun");
 	screen->setSceneTitle(sceneTitle);
 	screen->setSceneSubtitle("Mark V - Post-rock");
@@ -300,8 +373,12 @@ void loop() {
 		sendMIDIControlChange(5, isDelayOn ? 0 : 127);
 		isDelayOn = !isDelayOn;
 	}
+	if (buttonValues[Buttons::F] == Button::PRESSED) {
+		isLoopOn = true;
+	}
 
 	otaMode();
+	loopMode();
 
 	// server.handleClient();
 	// byte buttonStateA = buttonA.read();
