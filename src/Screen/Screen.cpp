@@ -35,14 +35,14 @@ void Screen::renderScene() {
 			lcd->print("Next ");
 			lcd->write(0); // Up character
 		} else {
-			lcd->print(bottomLeft);
+			lcd->print(bottomLeft + " ");
 		}
 		if (bottomCenter == "") {
 			lcd->print(" Prev ");
 			lcd->write(1); // Down character
 			lcd->print(" ");
 		} else {
-			lcd->print(bottomCenter);
+			lcd->print(bottomCenter + " ");
 		}
 		lcd->print(bottomRight);
 	}
@@ -67,4 +67,24 @@ String Screen::makeWhitespacePadding(const String& text) {
 		padding += " ";
 	}
 	return padding + text + (paddingSize % 2 == 0 ? padding : padding + " ");
+}
+
+String Screen::makeLeftAlignedWhitespacePadding(const String& text) {
+	int paddingSize = RENDERABLE_ACTION_TEXT_SIZE - text.length();
+	if (paddingSize == 0) return text;
+	String padding = "";
+	for (int i = 0; i < paddingSize; i++) {
+		padding += " ";
+	}
+	return text + padding;
+}
+
+String Screen::makeRightAlignedWhitespacePadding(const String& text) {
+	int paddingSize = RENDERABLE_ACTION_TEXT_SIZE - text.length();
+	if (paddingSize == 0) return text;
+	String padding = "";
+	for (int i = 0; i < paddingSize; i++) {
+		padding += " ";
+	}
+	return padding + text;
 }

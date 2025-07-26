@@ -20,12 +20,12 @@ class Screen {
 			isPrezMode = false;
 		}
 		void render();
-		void setTopLeft(const String& text) { topLeft = makeWhitespacePadding(text.substring(0, RENDERABLE_ACTION_TEXT_SIZE)); }
+		void setTopLeft(const String& text) { topLeft = makeLeftAlignedWhitespacePadding(text.substring(0, RENDERABLE_ACTION_TEXT_SIZE)); }
 		void setTopCenter(const String& text) { topCenter = makeWhitespacePadding(text.substring(0, RENDERABLE_ACTION_TEXT_SIZE)); }
-		void setTopRight(const String& text) { topRight = makeWhitespacePadding(text.substring(0, RENDERABLE_ACTION_TEXT_SIZE)); }
-		void setBottomLeft(const String& text) { bottomLeft = makeWhitespacePadding(text.substring(0, RENDERABLE_ACTION_TEXT_SIZE)); }
+		void setTopRight(const String& text) { topRight = makeRightAlignedWhitespacePadding(text.substring(0, RENDERABLE_ACTION_TEXT_SIZE)); }
+		void setBottomLeft(const String& text) { bottomLeft = makeLeftAlignedWhitespacePadding(text.substring(0, RENDERABLE_ACTION_TEXT_SIZE)); }
 		void setBottomCenter(const String& text) { bottomCenter = makeWhitespacePadding(text.substring(0, RENDERABLE_ACTION_TEXT_SIZE)); }
-		void setBottomRight(const String& text) { bottomRight = makeWhitespacePadding(text.substring(0, RENDERABLE_ACTION_TEXT_SIZE)); }
+		void setBottomRight(const String& text) { bottomRight = makeRightAlignedWhitespacePadding(text.substring(0, RENDERABLE_ACTION_TEXT_SIZE)); }
 		void setSceneTitle(const String& text) { sceneTitle = text.substring(0, RENDERABLE_TITLE_SIZE); }
 		void setSceneSubtitle(const String& text) { sceneSubtitle = text.substring(0, RENDERABLE_TITLE_SIZE); }
 		void setPrezMode(const bool& mode) { isPrezMode = mode; }
@@ -42,6 +42,8 @@ class Screen {
 		bool isPrezMode;
 
 		String makeWhitespacePadding(const String& text);
+		String makeLeftAlignedWhitespacePadding(const String& text);
+		String makeRightAlignedWhitespacePadding(const String& text);
 		void renderWelcomeScreen();
 		void renderScene();
 };
