@@ -15,23 +15,39 @@
 #include <ArduinoOTA.h>
 
 #define DEBUG_MODE true
+#define BUTTON_A_PIN 14
+#define BUTTON_B_PIN 27
+#define BUTTON_C_PIN 26
+#define BUTTON_D_PIN 25
+#define BUTTON_E_PIN 33
+#define BUTTON_F_PIN 32
 
 MIDI_CREATE_DEFAULT_INSTANCE();
 
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 Screen* screen;
 
-Button buttonA(14);
-Button buttonB(27);
-Button buttonC(26);
-Button buttonD(25);
-Button buttonE(33);
-Button buttonF(32);
+enum Buttons {
+	A, B, C, D, E, F
+};
+Button buttons[6] = {
+	Button(BUTTON_A_PIN),
+	Button(BUTTON_B_PIN),
+	Button(BUTTON_C_PIN),
+	Button(BUTTON_D_PIN),
+	Button(BUTTON_E_PIN),
+	Button(BUTTON_F_PIN)
+};
+Button::Status buttonValues[6];
 
 bool isAnyButtonPressed() {
 	return
-	buttonA.read() == Button::PRESSED || buttonB.read() == Button::PRESSED || buttonC.read() == Button::PRESSED ||
-	buttonD.read() == Button::PRESSED || buttonE.read() == Button::PRESSED || buttonF.read() == Button::PRESSED;
+		buttonValues[Buttons::A] == Button::PRESSED ||
+		buttonValues[Buttons::B] == Button::PRESSED ||
+		buttonValues[Buttons::C] == Button::PRESSED ||
+		buttonValues[Buttons::D] == Button::PRESSED ||
+		buttonValues[Buttons::E] == Button::PRESSED ||
+		buttonValues[Buttons::F] == Button::PRESSED;
 }
 
 const char* ssid = "ESP32-Access-Point";
@@ -145,8 +161,8 @@ void onOTAStart() {
 	screen->render();
 }
 
-void otaMode(Button::Status buttonAValue, Button::Status buttonCValue) {
-	if (buttonAValue == Button::LONG_PRESSED && buttonCValue == Button::LONG_PRESSED) {
+void otaMode() {
+	if (buttonValues[Buttons::A] == Button::LONG_PRESSED && buttonValues[Buttons::C] == Button::LONG_PRESSED) {
 		screen->clear();
 		WiFi.mode(WIFI_AP);
 		WiFi.softAP(ssid, password);
@@ -194,6 +210,15 @@ void otaDebug() {
 	}
 }
 
+void readButtonValues() {
+	buttonValues[Buttons::A] = buttons[Buttons::A].read();
+	buttonValues[Buttons::B] = buttons[Buttons::B].read();
+	buttonValues[Buttons::C] = buttons[Buttons::C].read();
+	buttonValues[Buttons::D] = buttons[Buttons::D].read();
+	buttonValues[Buttons::E] = buttons[Buttons::E].read();
+	buttonValues[Buttons::F] = buttons[Buttons::F].read();
+}
+
 void setup() {
 	Serial.begin(9600);
   MIDI.begin(MIDI_CHANNEL_OMNI);
@@ -239,40 +264,36 @@ void loop() {
 	screen->setSceneSubtitle("Mark V - Post-rock");
 	screen->render();
 
-	const Button::Status buttonAValue = buttonA.read();
-	const Button::Status buttonBValue = buttonB.read();
-	const Button::Status buttonCValue = buttonC.read();
-	const Button::Status buttonDValue = buttonD.read();
-	const Button::Status buttonEValue = buttonE.read();
-	const Button::Status buttonFValue = buttonF.read();
+	readButtonValues();
 
-	if (buttonAValue == Button::PRESSED) {
+	if (buttonValues[Buttons::A] == Button::PRESSED) {
 		currentPreset = (currentPreset + 1) % totalPresets;
 		MIDI.sendProgramChange(currentPreset, 1);
 		updateSceneTitle();
 	}
-	if (buttonBValue == Button::PRESSED) {
+	if (buttonValues[Buttons::B] == Button::PRESSED) {
 		currentPreset = (currentPreset - 1 + totalPresets) % totalPresets;
 		MIDI.sendProgramChange(currentPreset, 1);
 		updateSceneTitle();
 	}
-	if (buttonCValue == Button::PRESSED) {
+	if (buttonValues[Buttons::C] == Button::PRESSED) {
 		handleTap();
 		MIDI.sendControlChange(64, 64, 1);
 	}
-	if (buttonCValue == Button::LONG_PRESSED) {
+	if (buttonValues[Buttons::C] == Button::LONG_PRESSED) {
 		MIDI.sendControlChange(68, 127, 1);
 		isTunerOn = !isTunerOn;
 	}
-	if (buttonDValue == Button::PRESSED) {
+	if (buttonValues[Buttons::D] == Button::PRESSED) {
 		MIDI.sendControlChange(4, isReverbOn ? 0 : 127, 1);
 		isReverbOn = !isReverbOn;
 	}
-	if (buttonEValue == Button::PRESSED) {
+	if (buttonValues[Buttons::E] == Button::PRESSED) {
 		MIDI.sendControlChange(5, isDelayOn ? 0 : 127, 1);
 		isDelayOn = !isDelayOn;
 	}
-	otaMode(buttonAValue, buttonCValue);
+
+	otaMode();
 
 	// server.handleClient();
 	// byte buttonStateA = buttonA.read();
