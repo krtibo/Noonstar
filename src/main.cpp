@@ -22,6 +22,18 @@
 #define BUTTON_E_PIN 33
 #define BUTTON_F_PIN 32
 #define MIDI_CHANNEL 1
+#define COMMA ,
+#define CC_HIGH 127
+#define CC_LOW 0
+#define CC_LOOP_REC 60 COMMA CC_HIGH
+#define CC_LOOP_OVERDUB 60 COMMA CC_LOW
+#define CC_LOOP_PLAY 61 COMMA CC_HIGH
+#define CC_LOOP_STOP 61 COMMA CC_LOW
+#define CC_LOOP_UNDO 63 COMMA CC_HIGH
+#define CC_TAP 64 COMMA CC_HIGH
+#define CC_TUNER 68 COMMA CC_LOW
+#define CC_RVB 4
+#define CC_DLY 5
 
 MIDI_CREATE_DEFAULT_INSTANCE();
 
@@ -358,19 +370,21 @@ void loop() {
 		updateSceneTitle();
 	}
 	if (buttonValues[Buttons::C] == Button::PRESSED) {
-		handleTap();
-		sendMIDIControlChange(64, 64);
+		if (!isTunerOn) {
+			handleTap();
+			sendMIDIControlChange(CC_TAP);
+		}
 	}
 	if (buttonValues[Buttons::C] == Button::LONG_PRESSED) {
-		sendMIDIControlChange(68, 127);
+		sendMIDIControlChange(CC_TUNER);
 		isTunerOn = !isTunerOn;
 	}
 	if (buttonValues[Buttons::D] == Button::PRESSED) {
-		sendMIDIControlChange(4, isReverbOn ? 0 : 127);
+		sendMIDIControlChange(CC_RVB, isReverbOn ? CC_LOW : CC_HIGH);
 		isReverbOn = !isReverbOn;
 	}
 	if (buttonValues[Buttons::E] == Button::PRESSED) {
-		sendMIDIControlChange(5, isDelayOn ? 0 : 127);
+		sendMIDIControlChange(CC_DLY, isDelayOn ? CC_LOW : CC_HIGH);
 		isDelayOn = !isDelayOn;
 	}
 	if (buttonValues[Buttons::F] == Button::PRESSED) {
