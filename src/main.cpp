@@ -21,6 +21,7 @@
 #define BUTTON_D_PIN 25
 #define BUTTON_E_PIN 33
 #define BUTTON_F_PIN 32
+#define MIDI_CHANNEL 1
 
 MIDI_CREATE_DEFAULT_INSTANCE();
 
@@ -219,10 +220,18 @@ void readButtonValues() {
 	buttonValues[Buttons::F] = buttons[Buttons::F].read();
 }
 
+void sendMIDIProgramChange(int programNumber) {
+	MIDI.sendProgramChange(programNumber, MIDI_CHANNEL);
+}
+
+void sendMIDIControlChange(int controlNumber, int controlValue) {
+	MIDI.sendControlChange(controlNumber, controlValue, MIDI_CHANNEL);
+}
+
 void setup() {
 	Serial.begin(9600);
   MIDI.begin(MIDI_CHANNEL_OMNI);
-	MIDI.sendProgramChange(0, 1);
+	sendMIDIProgramChange(0);
 	screen = new Screen(lcd);
 	updateSceneTitle();
 	otaDebug();
@@ -252,7 +261,6 @@ void setup() {
   // Serial.println("HTTP server started");
 }
 
-
 void loop() {
 	if (DEBUG_MODE) ArduinoOTA.handle();
 	updateSceneTitle();
@@ -268,28 +276,28 @@ void loop() {
 
 	if (buttonValues[Buttons::A] == Button::PRESSED) {
 		currentPreset = (currentPreset + 1) % totalPresets;
-		MIDI.sendProgramChange(currentPreset, 1);
+		sendMIDIProgramChange(currentPreset);
 		updateSceneTitle();
 	}
 	if (buttonValues[Buttons::B] == Button::PRESSED) {
 		currentPreset = (currentPreset - 1 + totalPresets) % totalPresets;
-		MIDI.sendProgramChange(currentPreset, 1);
+		sendMIDIProgramChange(currentPreset);
 		updateSceneTitle();
 	}
 	if (buttonValues[Buttons::C] == Button::PRESSED) {
 		handleTap();
-		MIDI.sendControlChange(64, 64, 1);
+		sendMIDIControlChange(64, 64);
 	}
 	if (buttonValues[Buttons::C] == Button::LONG_PRESSED) {
-		MIDI.sendControlChange(68, 127, 1);
+		sendMIDIControlChange(68, 127);
 		isTunerOn = !isTunerOn;
 	}
 	if (buttonValues[Buttons::D] == Button::PRESSED) {
-		MIDI.sendControlChange(4, isReverbOn ? 0 : 127, 1);
+		sendMIDIControlChange(4, isReverbOn ? 0 : 127);
 		isReverbOn = !isReverbOn;
 	}
 	if (buttonValues[Buttons::E] == Button::PRESSED) {
-		MIDI.sendControlChange(5, isDelayOn ? 0 : 127, 1);
+		sendMIDIControlChange(5, isDelayOn ? 0 : 127);
 		isDelayOn = !isDelayOn;
 	}
 
