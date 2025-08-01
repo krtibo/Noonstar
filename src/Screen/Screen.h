@@ -14,8 +14,9 @@ class Screen {
 			lcd.init();
 			lcd.backlight();
 			lcd.clear();
-			lcd.createChar(0, upCharacter);
-			lcd.createChar(1, downCharacter);
+			lcd.createChar(1, upCharacter);
+			lcd.createChar(2, downCharacter);
+			lcd.createChar(3, noteCharacter);
 			initialRun = true;
 			isPrezMode = false;
 		}
@@ -33,8 +34,9 @@ class Screen {
 		void clear() { lcd->clear(); }
 
 	private:
-		byte downCharacter[CUSTOM_CHAR_SIZE] = { B00000, B00000, B11111, B11111, B01110, B00100, B00000, B00000 };
-		byte upCharacter[CUSTOM_CHAR_SIZE] = { B00000, B00000, B00100, B01110, B11111, B11111, B00000, B00000 };
+		byte downCharacter[CUSTOM_CHAR_SIZE] = { B00000, B00000, B00000, B11111, B01110, B00100, B00000, B00000 };
+		byte upCharacter[CUSTOM_CHAR_SIZE] = { B00000, B00000, B00000, B00100, B01110, B11111, B00000, B00000 };
+		byte noteCharacter[CUSTOM_CHAR_SIZE] = { B00011, B00011, B00010, B00010, B00010, B01110, B11110, B01100 };
 		LiquidCrystal_I2C* lcd;
 		String topLeft, topCenter, topRight, bottomLeft, bottomCenter, bottomRight;
 		String sceneTitle, sceneSubtitle;

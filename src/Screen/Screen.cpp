@@ -32,15 +32,12 @@ void Screen::renderScene() {
 	if (!isPrezMode) {
 		lcd->setCursor(0, 3);
 		if (bottomLeft == "") {
-			lcd->print("Next ");
-			lcd->write(0); // Up character
+			lcd->print("Next \x01"); // up character as char
 		} else {
 			lcd->print(bottomLeft + " ");
 		}
 		if (bottomCenter == "") {
-			lcd->print(" Prev ");
-			lcd->write(1); // Down character
-			lcd->print(" ");
+			lcd->print(" Prev \x02 "); // down character as char
 		} else {
 			lcd->print(bottomCenter + " ");
 		}

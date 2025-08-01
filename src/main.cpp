@@ -34,15 +34,14 @@
 #define CC_TUNER 68 COMMA CC_LOW
 #define CC_RVB 4
 #define CC_DLY 5
+#define TAP_TIMEOUT 2000
 
 MIDI_CREATE_DEFAULT_INSTANCE();
 
 LiquidCrystal_I2C lcd(0x27, 20, 4);
 Screen* screen;
 
-enum Buttons {
-	A, B, C, D, E, F
-};
+enum Buttons { A, B, C, D, E, F };
 Button buttons[6] = {
 	Button(BUTTON_A_PIN),
 	Button(BUTTON_B_PIN),
@@ -85,7 +84,7 @@ unsigned long currentTap;
 void updateSceneTitle() {
 	float tapsSumFloat = static_cast<float>(tapsSum) / taps;
 	if (tapsSumFloat > 0) {
-		std::sprintf(sceneTitle, "#%03d            t%3.0f", currentPreset, 60000 / tapsSumFloat);
+		std::sprintf(sceneTitle, "#%03d            \x03%3.0f", currentPreset, 60000 / tapsSumFloat);
 	} else {
 		std::sprintf(sceneTitle, "#%03d", currentPreset);
 	}
@@ -202,7 +201,7 @@ void otaMode() {
 
 void handleTap() {
 	currentTap = millis();
-	if (lastTap > 0 && currentTap - lastTap > 5000) {
+	if (lastTap > 0 && currentTap - lastTap > TAP_TIMEOUT) {
 		taps = 0;
 		tapsSum = 0;
 		currentTap = 0;
@@ -352,9 +351,9 @@ void loop() {
 	screen->setTopLeft(isReverbOn ? "RVB   " : "rvb   ");
 	screen->setTopCenter(isDelayOn ? "DLY" : "dly");
 	screen->setTopRight(isLoopOn ? "  LOOP" : "  loop");
-	screen->setBottomRight(isTunerOn ? " t/TUN" : " t/tun");
+	screen->setBottomRight(isTunerOn ? " \x03/TUN" : " \x03/tun");
 	screen->setSceneTitle(sceneTitle);
-	screen->setSceneSubtitle("Mark V - Post-rock");
+	screen->setSceneSubtitle("Mark V:25 A");
 	screen->render();
 
 	readButtonValues();
