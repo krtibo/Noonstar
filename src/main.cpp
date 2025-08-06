@@ -13,6 +13,7 @@
 #include <ESPmDNS.h>
 #include <MIDI.h>
 #include <ArduinoOTA.h>
+#include <Preferences.h>
 
 #define DEBUG_MODE true
 #define BUTTON_A_PIN 14
@@ -80,6 +81,8 @@ int taps = 0;
 unsigned long lastTap;
 unsigned long tapsSum;
 unsigned long currentTap;
+
+Preferences preferences;
 
 void updateSceneTitle() {
 	float tapsSumFloat = static_cast<float>(tapsSum) / taps;
@@ -305,6 +308,7 @@ void loopMode() {
 		}
 		if (buttonValues[Buttons::F] == Button::PRESSED) {
 			isLoopOn = false;
+			preferences.putBool("loop", isLoopOn);
 			screen->resetTextContent();
 			screen->clear();
 			break;
@@ -315,6 +319,12 @@ void loopMode() {
 void setup() {
 	Serial.begin(9600);
   MIDI.begin(MIDI_CHANNEL_OMNI);
+	preferences.begin("noonstar", false);
+	isReverbOn = preferences.getBool("reverb", false);
+	isDelayOn = preferences.getBool("delay", false);
+	isLoopOn = preferences.getBool("loop", false);
+
+
 	sendMIDIProgramChange(0);
 	screen = new Screen(lcd);
 	updateSceneTitle();
@@ -381,13 +391,16 @@ void loop() {
 	if (buttonValues[Buttons::D] == Button::PRESSED) {
 		sendMIDIControlChange(CC_RVB, isReverbOn ? CC_LOW : CC_HIGH);
 		isReverbOn = !isReverbOn;
+		preferences.putBool("reverb", isReverbOn);
 	}
 	if (buttonValues[Buttons::E] == Button::PRESSED) {
 		sendMIDIControlChange(CC_DLY, isDelayOn ? CC_LOW : CC_HIGH);
 		isDelayOn = !isDelayOn;
+		preferences.putBool("delay", isDelayOn);
 	}
 	if (buttonValues[Buttons::F] == Button::PRESSED) {
 		isLoopOn = true;
+		preferences.putBool("loop", isLoopOn);
 	}
 
 	otaMode();
