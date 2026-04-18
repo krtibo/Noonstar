@@ -10,16 +10,19 @@ Button::Status Button::read() {
         lastValue = newValue;
         lastValueRead = currentTime;
 
-        if (newValue == Status::PRESSED) {
-            isPressed = true;
-            longPressTriggered = false;  // reset long press trigger
-            return Status::PRESSED;
-        }
-        else { // NOT_PRESSED
-            isPressed = false;
-            return Status::NOT_PRESSED;
-        }
-    }
+			if (newValue == Status::PRESSED) {
+				isPressed = true;
+				longPressTriggered = false;  // Reset for new press
+				return Status::NONE;  // Wait for hold or release
+			} else {  // Released
+				if (isPressed && !longPressTriggered) {
+					isPressed = false;
+					return Status::PRESSED;  // Short press confirmed
+				}
+				isPressed = false;
+				return Status::NONE;
+			}
+		}
     // No state change; button still pressed?
     else if (isPressed && !longPressTriggered) {
         if ((currentTime - lastValueRead) >= LONG_PRESS_TIME) {
