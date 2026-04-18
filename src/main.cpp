@@ -10,6 +10,7 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include "SPIFFS.h"
+#include "midi_Defs.h"
 #include <ESPmDNS.h>
 #include <MIDI.h>
 #include <ArduinoOTA.h>
@@ -23,6 +24,7 @@
 #define BUTTON_E_PIN 33
 #define BUTTON_F_PIN 32
 #define MIDI_CHANNEL 1
+#define MIDI_CHANNEL_AMP 2
 #define COMMA ,
 #define CC_HIGH 127
 #define CC_LOW 0
@@ -53,6 +55,34 @@ Button buttons[6] = {
 };
 Button::Status buttonValues[6];
 
+enum AmpFeatures { RHY1, RHY2, LEAD, FXLOOP, EQ };
+boolean ampState[5] = {
+	false, // rhy1
+	false, // rhy2
+	false, // lead
+	false, // fx loop
+	false  // eq
+};
+
+int RHY1_PROGRAMS[4] = {0, 1, 2, 3};
+int RHY2_PROGRAMS[4] = {4, 5, 6, 7};
+int LEAD_PROGRAMS[4] = {8, 9, 10, 11};
+
+int* getCurrentChannelPrograms() {
+	if (ampState[AmpFeatures::RHY1]) return RHY1_PROGRAMS;
+	else if (ampState[AmpFeatures::RHY2]) return RHY2_PROGRAMS;
+	else return LEAD_PROGRAMS;
+}
+
+int getProgramNumberBasedOnState() {
+	int* currentPrograms = getCurrentChannelPrograms();
+	if (!ampState[AmpFeatures::FXLOOP] && !ampState[AmpFeatures::EQ]) return currentPrograms[0];
+	if (!ampState[AmpFeatures::FXLOOP] && ampState[AmpFeatures::EQ]) return currentPrograms[1];
+	if (ampState[AmpFeatures::FXLOOP] && !ampState[AmpFeatures::EQ]) return currentPrograms[2];
+	if (ampState[AmpFeatures::FXLOOP] && ampState[AmpFeatures::EQ]) return currentPrograms[3];
+	return 0;
+}
+
 bool isAnyButtonPressed() {
 	return
 		buttonValues[Buttons::A] == Button::PRESSED ||
@@ -73,6 +103,7 @@ bool isTunerOn = false;
 bool isReverbOn = false;
 bool isDelayOn = false;
 bool isLoopOn = false;
+bool isChannelSwitcherModeOn = false;
 char sceneTitle[21];
 int currentPreset = 0;
 int totalPresets = 127;
@@ -83,6 +114,22 @@ unsigned long tapsSum;
 unsigned long currentTap;
 
 Preferences preferences;
+
+void persistAmpState() {
+	preferences.putBool("rhy1", ampState[AmpFeatures::RHY1]);
+	preferences.putBool("rhy2", ampState[AmpFeatures::RHY2]);
+	preferences.putBool("lead", ampState[AmpFeatures::LEAD]);
+	preferences.putBool("fxloop", ampState[AmpFeatures::FXLOOP]);
+	preferences.putBool("eq", ampState[AmpFeatures::EQ]);
+}
+
+void initializeAmpState() {
+	ampState[AmpFeatures::RHY1] = preferences.getBool("rhy1", true);
+	ampState[AmpFeatures::RHY2] = preferences.getBool("rhy2", false);
+	ampState[AmpFeatures::LEAD] = preferences.getBool("lead", false);
+	ampState[AmpFeatures::FXLOOP] = preferences.getBool("fxloop", false);
+	ampState[AmpFeatures::EQ] = preferences.getBool("eq", false);
+}
 
 void updateSceneTitle() {
 	float tapsSumFloat = static_cast<float>(tapsSum) / taps;
@@ -177,6 +224,15 @@ void onOTAStart() {
 	screen->render();
 }
 
+void readButtonValues() {
+	buttonValues[Buttons::A] = buttons[Buttons::A].read();
+	buttonValues[Buttons::B] = buttons[Buttons::B].read();
+	buttonValues[Buttons::C] = buttons[Buttons::C].read();
+	buttonValues[Buttons::D] = buttons[Buttons::D].read();
+	buttonValues[Buttons::E] = buttons[Buttons::E].read();
+	buttonValues[Buttons::F] = buttons[Buttons::F].read();
+}
+
 void otaMode() {
 	if (buttonValues[Buttons::A] == Button::LONG_PRESSED && buttonValues[Buttons::C] == Button::LONG_PRESSED) {
 		screen->clear();
@@ -191,12 +247,13 @@ void otaMode() {
 			screen->render();
 			ArduinoOTA.handle();
 			ArduinoOTA.onStart(onOTAStart);
+			readButtonValues();
 			if (isAnyButtonPressed()) {
 				screen->setPrezMode(false);
 				screen->clear();
 				WiFi.softAPdisconnect(true);
 				ArduinoOTA.end();
-				break;
+				return;
 			}
 		}
 	}
@@ -226,17 +283,8 @@ void otaDebug() {
 	}
 }
 
-void readButtonValues() {
-	buttonValues[Buttons::A] = buttons[Buttons::A].read();
-	buttonValues[Buttons::B] = buttons[Buttons::B].read();
-	buttonValues[Buttons::C] = buttons[Buttons::C].read();
-	buttonValues[Buttons::D] = buttons[Buttons::D].read();
-	buttonValues[Buttons::E] = buttons[Buttons::E].read();
-	buttonValues[Buttons::F] = buttons[Buttons::F].read();
-}
-
-void sendMIDIProgramChange(int programNumber) {
-	MIDI.sendProgramChange(programNumber, MIDI_CHANNEL);
+void sendMIDIProgramChange(int programNumber, midi::Channel channel) {
+	MIDI.sendProgramChange(programNumber, channel);
 }
 
 void sendMIDIControlChange(int controlNumber, int controlValue) {
@@ -251,6 +299,7 @@ void loopMode() {
 	unsigned long loopLength = 0;
 	char loopLengthStr[20] = "";
 	while(true) {
+		otaMode();
 		screen->setBottomLeft(loopStartTime > 0 ? "REC" : "rec");
 		screen->setBottomCenter("play");
 		screen->setBottomRight("stop");
@@ -316,6 +365,67 @@ void loopMode() {
 	}
 }
 
+void channelSwitcherMode() {
+	if (!isChannelSwitcherModeOn) return;
+	screen->resetTextContent();
+	screen->clear();
+
+	while(true) {
+		otaMode();
+		screen->setBottomLeft(ampState[AmpFeatures::RHY1] ? "RHY1" : "rhy1");
+		screen->setBottomCenter(ampState[AmpFeatures::RHY2] ? "RHY2" : "rhy2");
+		screen->setBottomRight(ampState[AmpFeatures::LEAD] ? "LEAD" : "lead");
+		screen->setTopLeft(ampState[AmpFeatures::FXLOOP] ? "FXLOOP" : "fxloop");
+		screen->setTopCenter(ampState[AmpFeatures::EQ] ? "EQ" : "eq");
+		screen->setTopRight("\x04");
+		screen->setSceneTitle("Mesa/Boogie");
+		screen->setSceneSubtitle("Switching mode");
+		screen->render();
+		readButtonValues();
+
+		if (buttonValues[Buttons::A] == Button::PRESSED && !ampState[AmpFeatures::RHY1]) {
+			ampState[AmpFeatures::RHY1] = true;
+			ampState[AmpFeatures::RHY2] = false;
+			ampState[AmpFeatures::LEAD] = false;
+			sendMIDIProgramChange(getProgramNumberBasedOnState(), MIDI_CHANNEL_AMP);
+		}
+
+		if (buttonValues[Buttons::B] == Button::PRESSED && !ampState[AmpFeatures::RHY2]) {
+			ampState[AmpFeatures::RHY1] = false;
+			ampState[AmpFeatures::RHY2] = true;
+			ampState[AmpFeatures::LEAD] = false;
+			sendMIDIProgramChange(getProgramNumberBasedOnState(), MIDI_CHANNEL_AMP);
+		}
+
+		if (buttonValues[Buttons::C] == Button::PRESSED && !ampState[AmpFeatures::LEAD]) {
+			ampState[AmpFeatures::RHY1] = false;
+			ampState[AmpFeatures::RHY2] = false;
+			ampState[AmpFeatures::LEAD] = true;
+			sendMIDIProgramChange(getProgramNumberBasedOnState(), MIDI_CHANNEL_AMP);
+		}
+		
+		if (buttonValues[Buttons::D] == Button::PRESSED) {
+			ampState[AmpFeatures::FXLOOP] = !ampState[AmpFeatures::FXLOOP];
+			sendMIDIProgramChange(getProgramNumberBasedOnState(), MIDI_CHANNEL_AMP);
+		}
+
+		if (buttonValues[Buttons::E] == Button::PRESSED) {
+			ampState[AmpFeatures::EQ] = !ampState[AmpFeatures::EQ];
+			sendMIDIProgramChange(getProgramNumberBasedOnState(), MIDI_CHANNEL_AMP);
+		}
+
+		if (buttonValues[Buttons::F] == Button::PRESSED) {
+			isChannelSwitcherModeOn = false;
+			preferences.putBool("channelSwitcher", isChannelSwitcherModeOn);
+			screen->resetTextContent();
+			screen->clear();
+			break;
+		}
+
+		if (isAnyButtonPressed()) persistAmpState();
+	}
+}
+
 void setup() {
 	Serial.begin(9600);
   MIDI.begin(MIDI_CHANNEL_OMNI);
@@ -323,9 +433,10 @@ void setup() {
 	isReverbOn = preferences.getBool("reverb", false);
 	isDelayOn = preferences.getBool("delay", false);
 	isLoopOn = preferences.getBool("loop", false);
+	isChannelSwitcherModeOn = preferences.getBool("channelSwitcher", false);
+	initializeAmpState();
 
-
-	sendMIDIProgramChange(0);
+	sendMIDIProgramChange(0, MIDI_CHANNEL);
 	screen = new Screen(lcd);
 	updateSceneTitle();
 	otaDebug();
@@ -360,7 +471,7 @@ void loop() {
 	updateSceneTitle();
 	screen->setTopLeft(isReverbOn ? "RVB   " : "rvb   ");
 	screen->setTopCenter(isDelayOn ? "DLY" : "dly");
-	screen->setTopRight(isLoopOn ? "  LOOP" : "  loop");
+	screen->setTopRight(isLoopOn ? "  LOOP" : "loop/\x04");
 	screen->setBottomRight(isTunerOn ? " \x03/TUN" : " \x03/tun");
 	screen->setSceneTitle(sceneTitle);
 	screen->setSceneSubtitle("Mark V:25 A");
@@ -370,12 +481,12 @@ void loop() {
 
 	if (buttonValues[Buttons::A] == Button::PRESSED) {
 		currentPreset = (currentPreset + 1) % totalPresets;
-		sendMIDIProgramChange(currentPreset);
+		sendMIDIProgramChange(currentPreset, MIDI_CHANNEL);
 		updateSceneTitle();
 	}
 	if (buttonValues[Buttons::B] == Button::PRESSED) {
 		currentPreset = (currentPreset - 1 + totalPresets) % totalPresets;
-		sendMIDIProgramChange(currentPreset);
+		sendMIDIProgramChange(currentPreset, MIDI_CHANNEL);
 		updateSceneTitle();
 	}
 	if (buttonValues[Buttons::C] == Button::PRESSED) {
@@ -402,9 +513,14 @@ void loop() {
 		isLoopOn = true;
 		preferences.putBool("loop", isLoopOn);
 	}
+	if (buttonValues[Buttons::F] == Button::LONG_PRESSED) {
+		isChannelSwitcherModeOn = true;
+		preferences.putBool("channelSwitcher", isChannelSwitcherModeOn);
+	}
 
 	otaMode();
 	loopMode();
+	channelSwitcherMode();
 
 	// server.handleClient();
 }
