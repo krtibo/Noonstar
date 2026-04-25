@@ -104,7 +104,7 @@ bool isReverbOn = false;
 bool isDelayOn = false;
 bool isLoopOn = false;
 bool isChannelSwitcherModeOn = false;
-char sceneTitle[21];
+char sceneSubTitle[21];
 int currentPreset = 0;
 int totalPresets = 127;
 
@@ -134,9 +134,9 @@ void initializeAmpState() {
 void updateSceneTitle() {
 	float tapsSumFloat = static_cast<float>(tapsSum) / taps;
 	if (tapsSumFloat > 0) {
-		std::sprintf(sceneTitle, "#%03d            \x03%3.0f", currentPreset, 60000 / tapsSumFloat);
+		std::sprintf(sceneSubTitle, "#%03d            \x03%3.0f", currentPreset, 60000 / tapsSumFloat);
 	} else {
-		std::sprintf(sceneTitle, "#%03d", currentPreset);
+		std::sprintf(sceneSubTitle, "#%03d", currentPreset);
 	}
 }
 
@@ -291,6 +291,14 @@ void sendMIDIControlChange(int controlNumber, int controlValue) {
 	MIDI.sendControlChange(controlNumber, controlValue, MIDI_CHANNEL);
 }
 
+void switchToNextScene() {
+	if (!isLoopOn && !isChannelSwitcherModeOn) isLoopOn = true;
+	else if (isLoopOn) { isLoopOn = false; isChannelSwitcherModeOn = true; }
+	else if (isChannelSwitcherModeOn) { isChannelSwitcherModeOn = false; }
+	preferences.putBool("loop", isLoopOn);
+	preferences.putBool("channelSwitcher", isChannelSwitcherModeOn);
+}
+
 void loopMode() {
 	if (!isLoopOn) return;
 	screen->resetTextContent();
@@ -305,7 +313,7 @@ void loopMode() {
 		screen->setBottomRight("stop");
 		screen->setTopLeft("o.dub");
 		screen->setTopCenter("undo");
-		screen->setTopRight("LOOP");
+		screen->setTopRight("2/3");
 		screen->setSceneTitle("Loop mode");
 
 		if (loopStartTime > 0) {
@@ -356,8 +364,7 @@ void loopMode() {
 			sendMIDIControlChange(CC_LOOP_UNDO);
 		}
 		if (buttonValues[Buttons::F] == Button::PRESSED) {
-			isLoopOn = false;
-			preferences.putBool("loop", isLoopOn);
+			switchToNextScene();
 			screen->resetTextContent();
 			screen->clear();
 			break;
@@ -377,9 +384,8 @@ void channelSwitcherMode() {
 		screen->setBottomRight(ampState[AmpFeatures::LEAD] ? "LEAD" : "lead");
 		screen->setTopLeft(ampState[AmpFeatures::FXLOOP] ? "FXLOOP" : "fxloop");
 		screen->setTopCenter(ampState[AmpFeatures::EQ] ? "EQ" : "eq");
-		screen->setTopRight("\x04");
-		screen->setSceneTitle("Mesa/Boogie");
-		screen->setSceneSubtitle("Switching mode");
+		screen->setTopRight("3/3");
+		screen->setSceneTitle("M/B Switching mode");
 		screen->render();
 		readButtonValues();
 
@@ -415,8 +421,7 @@ void channelSwitcherMode() {
 		}
 
 		if (buttonValues[Buttons::F] == Button::PRESSED) {
-			isChannelSwitcherModeOn = false;
-			preferences.putBool("channelSwitcher", isChannelSwitcherModeOn);
+			switchToNextScene();
 			screen->resetTextContent();
 			screen->clear();
 			break;
@@ -471,10 +476,10 @@ void loop() {
 	updateSceneTitle();
 	screen->setTopLeft(isReverbOn ? "RVB   " : "rvb   ");
 	screen->setTopCenter(isDelayOn ? "DLY" : "dly");
-	screen->setTopRight(isLoopOn ? "  LOOP" : "loop/\x04");
+	screen->setTopRight("1/3");
 	screen->setBottomRight(isTunerOn ? " \x03/TUN" : " \x03/tun");
-	screen->setSceneTitle(sceneTitle);
-	screen->setSceneSubtitle("Mark V:25 A");
+	screen->setSceneTitle("HX Stomp mode");
+	screen->setSceneSubtitle(sceneSubTitle);
 	screen->render();
 
 	readButtonValues();
@@ -510,12 +515,7 @@ void loop() {
 		preferences.putBool("delay", isDelayOn);
 	}
 	if (buttonValues[Buttons::F] == Button::PRESSED) {
-		isLoopOn = true;
-		preferences.putBool("loop", isLoopOn);
-	}
-	if (buttonValues[Buttons::F] == Button::LONG_PRESSED) {
-		isChannelSwitcherModeOn = true;
-		preferences.putBool("channelSwitcher", isChannelSwitcherModeOn);
+		switchToNextScene();
 	}
 
 	otaMode();
